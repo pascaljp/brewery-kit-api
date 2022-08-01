@@ -45,24 +45,24 @@ describe('Api', () => {
 
     const api = new BreweryKitApi('/non_existent_dir', 'testMachineId');
     await api.saveInkbirdData([
-      {deviceId: 'deviceId1', unixtime: 1, temperature: 30, humidity: 80, battery: 90, probeType: 0},
-      {deviceId: 'deviceId2', unixtime: 1, temperature: 30, humidity: 80, battery: 90, probeType: 0},
+      {deviceId: 'deviceId1', unixtime: 1, temperature: 30, humidity: 80, battery: 90},
+      {deviceId: 'deviceId2', unixtime: 1, temperature: 30, humidity: 80, battery: 90},
     ], false);
 
     expect(fs.appendFileSync).toBeCalledTimes(2);
     expect(fs.appendFileSync).toBeCalledWith(
       '/non_existent_dir/1577836800',
-      '{"deviceId":"deviceId1","unixtime":1,"temperature":30,"humidity":80,"battery":90,"probeType":0}\n');
+      '{"deviceId":"deviceId1","unixtime":1,"temperature":30,"humidity":80,"battery":90}\n');
     expect(fs.appendFileSync).toBeCalledWith(
       '/non_existent_dir/1577836800',
-      '{"deviceId":"deviceId2","unixtime":1,"temperature":30,"humidity":80,"battery":90,"probeType":0}\n');
+      '{"deviceId":"deviceId2","unixtime":1,"temperature":30,"humidity":80,"battery":90}\n');
   });
 
   test('BreweryKit.saveInkbirdData resendToServer', async () => {
     // Setup local cache.
     mocked(fs.readdirSync).mockReturnValueOnce([new FakeDirent('file1')]);
-    const entry1 = '{"deviceId":"deviceId1","unixtime":1,"temperature":30,"humidity":80,"battery":90,"probeType":0}';
-    const entry2 = '{"deviceId":"deviceId2","unixtime":1,"temperature":30,"humidity":80,"battery":90,"probeType":0}';
+    const entry1 = '{"deviceId":"deviceId1","unixtime":1,"temperature":30,"humidity":80,"battery":90}';
+    const entry2 = '{"deviceId":"deviceId2","unixtime":1,"temperature":30,"humidity":80,"battery":90}';
     mocked(fs.readFileSync).mockReturnValue(entry1 + '\n' + entry2 + '\n');
 
     // Save to server.
@@ -81,8 +81,8 @@ describe('Api', () => {
         "body": JSON.stringify({
           "machineId": "testMachineId",
           "data": [
-            {"deviceId": "deviceId1", "unixtime": 1, "temperature": 30, "humidity": 80, "battery": 90, "probeType": 0},
-            {"deviceId": "deviceId2", "unixtime": 1, "temperature": 30, "humidity": 80, "battery": 90, "probeType": 0}
+            {"deviceId": "deviceId1", "unixtime": 1, "temperature": 30, "humidity": 80, "battery": 90},
+            {"deviceId": "deviceId2", "unixtime": 1, "temperature": 30, "humidity": 80, "battery": 90}
           ],
           "backfill": true
         }),

@@ -4,7 +4,9 @@
   "description": "Library to use brewery-kit Web APIs",
   "main": "dist/api.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc",
+    "publish": "echo 'npm version patch && npm publish'"
   },
   "repository": {
     "type": "git",

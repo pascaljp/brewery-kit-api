@@ -4,7 +4,6 @@ import AsyncLock from 'async-lock';
 import * as Path from 'path';
 import fetch from 'node-fetch';
 import moment from 'moment';
-// import {mocked} from 'jest-mock';
 
 const logger: Log4js.Logger = Log4js.getLogger();
 
@@ -92,8 +91,34 @@ interface InkbirdData {
   temperature: number;
   humidity: number;
   battery: number;
-  probeType: number;
 }
+
+type SaveSensorDataRequestType = {
+  backfill?: boolean;
+  machineId?: string;
+
+  power_meter?: {
+    deviceId?: string;
+    unixtime: number;
+    watt: number;
+  }[];
+  netatmo?: {
+    deviceId?: string;
+    unixtime: number;
+    temperature: number;
+    humidity: number;
+    co2Level: number;
+    airPressure: number;
+    noiseLevel: number;
+  }[];
+  inkbird?: InkbirdData[];
+};
+
+type SaveInkbirdDataRequestType = {
+  backfill?: boolean;
+  machineId?: string;
+  data: InkbirdData[];
+};
 
 async function fetchContent(url: string, init?: any): Promise<string> {
   const response = await fetch(url, init);
@@ -161,6 +186,20 @@ class BreweryKitApi {
     }
   }
 
+  async saveSensorData(params: SaveSensorDataRequestType[]): Promise<void>  {
+    try {
+      await fetchContent('https://brewery-app.com/api/client/saveSensorData', {
+        method: 'POST',
+        timeout: 5 * 1000,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(params),
+      });
+    } catch (e: any) {
+      logger.error('Error in saveSensorData:', e.message);
+      // return this.saveToDisk_(params);
+    }
+  }
+
   // The returned Promise always resolves.
   private async saveToDisk_(data: InkbirdData[]): Promise<void> {
     for (const entry of data) {
@@ -214,4 +253,4 @@ class BreweryKitApi {
   }
 }
 
-export {BreweryKitApi, InkbirdData};
+export {BreweryKitApi, InkbirdData, SaveInkbirdDataRequestType, SaveSensorDataRequestType};
