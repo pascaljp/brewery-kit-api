@@ -5,11 +5,28 @@
       "node": true
   },
   "extends": [
-      "google"
+      "google",
+      "@nuxtjs/eslint-config-typescript"
   ],
   "parserOptions": {
-      "ecmaVersion": 11
+    "ecmaVersion": 11,
+    "project": "./tsconfig.json"
   },
   "rules": {
+    "semi": ["error", "always"],
+    "space-before-function-paren": ["error", "never"],
+    "comma-dangle": ["error", "only-multiline"],
+    "object-curly-spacing": ["error", "never"],
+    "require-jsdoc": ["error", {
+        "require": {
+            "FunctionDeclaration": false,
+            "MethodDefinition": false,
+            "ClassDeclaration": false,
+            "ArrowFunctionExpression": false,
+            "FunctionExpression": false
+        }
+    }],
+    "max-len": ["error", { "code": 100 }],
+    "@typescript-eslint/switch-exhaustiveness-check": "error"
   }
 }

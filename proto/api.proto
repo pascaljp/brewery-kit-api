@@ -1,0 +1,43 @@
+syntax = "proto2";
+package Logs;
+
+message InkbirdLog {
+  optional string device_id = 5;
+
+  optional uint32 unixtime = 1;
+  optional int32 temperature_e2 = 2;
+  optional int32 humidity_e2 = 3;
+  optional int32 battery_percent = 4;
+}
+
+message PowerMeterLog {
+  optional string device_id = 4;
+
+  optional uint32 unixtime = 1;
+  // Deprecated.
+  optional uint32 watt = 2;
+  optional uint32 watt_e1 = 3;
+}
+
+message NetatmoLog {
+  optional string device_id = 7;
+
+  optional uint32 unixtime = 1;
+  optional int32 temperature_e2 = 2;
+  optional int32 humidity = 3;
+  optional int32 co2_level = 4;
+  optional int32 air_pressure_e1 = 5;
+  optional int32 noise_level = 6;
+}
+
+message Logs {
+  repeated InkbirdLog inkbird = 1;
+  repeated PowerMeterLog power_meter = 2;
+  repeated NetatmoLog netatmo = 3;
+}
+
+message SaveSensorDataRequest {
+  optional bool backfill = 1;
+  optional string machineId = 2;
+  optional Logs logs = 3;
+}
