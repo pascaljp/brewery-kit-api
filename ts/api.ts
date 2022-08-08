@@ -324,8 +324,12 @@ class BreweryKitApi {
       });
     } catch (e: any) {
       logger.error('Error in saveSensorData:', e.message);
-      await this.localCacheWriter_.saveProto(proto);
+      await this.saveSensorProtoLocally(proto);
     }
+  }
+
+  async saveSensorProtoLocally(proto: Logs.SaveSensorDataRequest) {
+    await this.localCacheWriter_.saveProto(proto);
   }
 
   async saveSensorData(
