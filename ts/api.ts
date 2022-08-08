@@ -184,6 +184,12 @@ type SaveSensorDataRequestType = {
   inkbird?: InkbirdData[];
 };
 
+type SaveInkbirdDataRequestType = {
+  backfill?: boolean;
+  machineId?: string;
+  data: InkbirdData[];
+};
+
 async function fetchContent(url: string, init?: any): Promise<string> {
   const response = await fetch(url, init);
   if (!response.ok) {
@@ -426,4 +432,4 @@ class BreweryKitApi {
   }
 }
 
-export {BreweryKitApi, SaveSensorDataRequestType};
+export {BreweryKitApi, InkbirdData, SaveInkbirdDataRequestType, SaveSensorDataRequestType};
