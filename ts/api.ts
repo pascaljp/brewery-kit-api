@@ -436,4 +436,4 @@ class BreweryKitApi {
   }
 }
 
-export {BreweryKitApi, InkbirdData, SaveInkbirdDataRequestType, SaveSensorDataRequestType};
+export {BreweryKitApi, InkbirdData, SaveInkbirdDataRequestType, SaveSensorDataRequestType, Logs};
