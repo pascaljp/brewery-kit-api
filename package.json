@@ -1,6 +1,6 @@
 {
   "name": "@pascaljp/brewery-kit-api",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Library to use brewery-kit Web APIs",
   "main": "dist/index.js",
   "scripts": {
