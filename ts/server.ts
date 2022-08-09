@@ -15,10 +15,10 @@ export class ServerApi {
     this.baseDir_ = baseDir;
   }
 
-  save(proto: Logs.Logs) {
+  save(proto: Logs.ILogs) {
     const protos: {[fieldName: string]: {[deviceId: string]: {[date: string]: Logs.Logs}}} = {};
     for (const fieldName of FieldNames) {
-      for (const entry of proto[fieldName]) {
+      for (const entry of proto[fieldName] || []) {
         const entryTime: DateTime = DateTime.fromSeconds(entry.unixtime!, {zone: 'Asia/Tokyo'});
         const entryDate: string = entryTime.toFormat('yyyy-LL-dd');
         if (!entry.deviceId) {
