@@ -3,7 +3,7 @@ import * as Path from 'path';
 import * as Log4js from 'log4js';
 import AsyncLock from 'async-lock';
 import fetch from 'node-fetch';
-import moment from 'moment';
+import {DateTime} from 'luxon';
 import {Logs} from '../proto/genfiles/api_pb';
 
 const logger: Log4js.Logger = Log4js.getLogger();
@@ -87,7 +87,7 @@ class LocalCacheWriter<T> {
           if (!logs[fieldName]) {
             continue;
           }
-          const protoToSave = Logs.Logs.create({});
+          const protoToSave = new Logs.Logs();
           protoToSave[fieldName] = logs[fieldName]!;
           const buffer = Logs.Logs.encode(protoToSave).finish();
           try {
@@ -200,48 +200,40 @@ async function fetchContent(url: string, init?: any): Promise<string> {
 
 // A class that sends data to brewery-kit server.
 class BreweryKitApi {
-  private tempDir_: string;
+  private dataDir_: string;
   private machineId_: string;
   private resending_: boolean;
   private localCacheWriter_: LocalCacheWriter<InkbirdData>;
   private timer_: NodeJS.Timer | null;
 
-  constructor(tmpdir: string, machineId: string) {
-    this.tempDir_ = tmpdir;
+  constructor(dataDir: string, machineId: string) {
+    this.dataDir_ = dataDir;
     this.machineId_ = machineId;
     this.resending_ = false;
     this.localCacheWriter_ = new LocalCacheWriter(
-      this.tempDir_,
-      '' + moment().unix()
+      this.dataDir_,
+      '' + DateTime.now().toSeconds()
     );
     this.timer_ = null;
 
-    fs.mkdirSync(this.tempDir_, {recursive: true});
+    fs.mkdirSync(this.dataDir_, {recursive: true});
   }
 
   // Time consuming, but this task does not block anyting.
   async startBackgroundTask(
-    callback: () => void,
-    resendText: boolean = true,
-    resendProto: boolean = false
+    callback: () => void
   ): Promise<void> {
     this.timer_ = setInterval(async() => {
       if (!this.resending_) {
         this.resending_ = true;
-        await Promise.all([
-          resendText ? this.resendWholeData_() : Promise.resolve(),
-          resendProto ? this.resendWholeProto_() : Promise.resolve(),
-        ]);
+        await this.resendWholeData_();
         this.resending_ = false;
         callback();
       }
     }, 10 * 60 * 1000);
 
     this.resending_ = true;
-    await Promise.all([
-      resendText ? this.resendWholeData_() : Promise.resolve(),
-      resendProto ? this.resendWholeProto_() : Promise.resolve(),
-    ]);
+    await this.resendWholeData_();
     this.resending_ = false;
     callback();
   }
@@ -279,59 +271,6 @@ class BreweryKitApi {
     }
   }
 
-  static splitSensorProto(
-    data: Logs.SaveSensorDataRequest,
-    batchSize: number = 512
-  ): Logs.SaveSensorDataRequest[] {
-    const sourceData: any = Logs.SaveSensorDataRequest.toObject(data);
-    const splittedProto = [];
-    for (const fieldName of Object.keys(sourceData.logs)) {
-      const logEntries: any[] = sourceData.logs[fieldName];
-      for (let start = 0; start < logEntries.length; start += batchSize) {
-        const partialData = logEntries.slice(
-          start,
-          Math.min(start + batchSize, logEntries.length)
-        );
-        const obj: any = {
-          backfill: data.backfill,
-          machineId: data.machineId,
-          logs: {},
-        };
-        obj.logs[fieldName] = partialData;
-        const proto: Logs.SaveSensorDataRequest =
-          Logs.SaveSensorDataRequest.create(obj);
-        splittedProto.push(proto);
-      }
-    }
-    return splittedProto;
-  }
-
-  async saveSensorProto(proto: Logs.SaveSensorDataRequest): Promise<void> {
-    const slicedProtos: Logs.SaveSensorDataRequest[] =
-      BreweryKitApi.splitSensorProto(proto, /* batchSize= */ 512);
-    for (const slicedProto of slicedProtos) {
-      await this.saveSensorProto_(slicedProto);
-    }
-  }
-
-  private async saveSensorProto_(proto: Logs.SaveSensorDataRequest) {
-    try {
-      await fetchContent('https://brewery-app.com/api/client/saveSensorProto', {
-        method: 'POST',
-        timeout: 5 * 1000,
-        headers: {'Content-Type': 'application/json'},
-        body: Logs.SaveSensorDataRequest.encode(proto).finish(),
-      });
-    } catch (e: any) {
-      logger.error('Error in saveSensorData:', e.message);
-      await this.saveSensorProtoLocally(proto);
-    }
-  }
-
-  async saveSensorProtoLocally(proto: Logs.SaveSensorDataRequest) {
-    await this.localCacheWriter_.saveProto(proto);
-  }
-
   async saveSensorData(
     params: SaveSensorDataRequestType
   ): Promise<void> {
@@ -356,21 +295,21 @@ class BreweryKitApi {
   }
 
   private async resendWholeData_(): Promise<void> {
-    const files: fs.Dirent[] = fs.readdirSync(this.tempDir_, {
+    const files: fs.Dirent[] = fs.readdirSync(this.dataDir_, {
       withFileTypes: true,
     });
 
     // New data will be stored to a new file.
     this.localCacheWriter_ = new LocalCacheWriter(
-      this.tempDir_,
-      '' + moment().unix()
+      this.dataDir_,
+      '' + DateTime.now().toSeconds()
     );
 
     for (const file of files) {
       if (!file.isFile()) {
         continue;
       }
-      const filePath: string = Path.join(this.tempDir_, file.name);
+      const filePath: string = Path.join(this.dataDir_, file.name);
       const localCache: LocalCacheReader<InkbirdData> =
         new LocalCacheReader(filePath);
       const entries: LocalCacheEntry<InkbirdData>[] =
@@ -398,42 +337,6 @@ class BreweryKitApi {
       fs.unlinkSync(filePath);
     }
   }
-
-  private async resendWholeProto_(): Promise<void> {
-    // New data will be stored to a new file.
-    this.localCacheWriter_ = new LocalCacheWriter(
-      this.tempDir_,
-      '' + moment().unix()
-    );
-
-    const subDirs: (keyof Logs.ILogs)[] = LogFields;
-    for (const subDir of subDirs) {
-      let files: fs.Dirent[] = [];
-      try {
-        files = fs.readdirSync(Path.join(this.tempDir_, subDir), {
-          withFileTypes: true,
-        });
-      } catch {
-        continue;
-      }
-      for (const file of files) {
-        if (!file.isFile()) {
-          continue;
-        }
-        const proto: Logs.SaveSensorDataRequest =
-          Logs.SaveSensorDataRequest.create({
-            backfill: true,
-            machineId: this.machineId_,
-            logs: {},
-          });
-        const filePath: string = Path.join(this.tempDir_, subDir, file.name);
-        const buffer: Buffer = fs.readFileSync(filePath);
-        proto.logs! = Logs.Logs.decode(buffer);
-        await this.saveSensorProto(proto);
-        fs.unlinkSync(filePath);
-      }
-    }
-  }
 }
 
-export {BreweryKitApi, InkbirdData, SaveInkbirdDataRequestType, SaveSensorDataRequestType, Logs};
+export {BreweryKitApi, InkbirdData, SaveInkbirdDataRequestType, SaveSensorDataRequestType};
