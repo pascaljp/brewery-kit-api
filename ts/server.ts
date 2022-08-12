@@ -51,7 +51,6 @@ export class ServerApi {
         }
       }
     }
-    console.info(proto);
   }
 
   load(type: keyof Logs.ILogs, date: DateTime): Logs.Logs {
