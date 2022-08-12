@@ -16,15 +16,17 @@ export class ServerApi {
   }
 
   save(proto: Logs.ILogs) {
+    const protoToSave = Logs.Logs.decode(Logs.Logs.encode(proto).finish());
     const protos: {[fieldName: string]: {[deviceId: string]: {[date: string]: Logs.Logs}}} = {};
     for (const fieldName of FieldNames) {
-      for (const entry of proto[fieldName] || []) {
+      for (const entry of protoToSave[fieldName] || []) {
         const entryTime: DateTime = DateTime.fromSeconds(entry.unixtime!, {zone: 'Asia/Tokyo'});
         const entryDate: string = entryTime.toFormat('yyyy-LL-dd');
         if (!entry.deviceId) {
           continue;
         }
         const deviceId: string = entry.deviceId;
+        delete entry.deviceId;
 
         if (!(fieldName in protos)) {
           protos[fieldName] = {};
@@ -44,10 +46,12 @@ export class ServerApi {
           const filePath = path.join(this.baseDir_, fieldName, deviceId, entryDate);
           const buffer: Uint8Array =
             Logs.Logs.encode(protos[fieldName]![deviceId]![entryDate]!).finish();
+          fs.mkdirSync(path.dirname(filePath), {recursive: true});
           fs.appendFileSync(filePath, buffer);
         }
       }
     }
+    console.info(proto);
   }
 
   load(type: keyof Logs.ILogs, date: DateTime): Logs.Logs {

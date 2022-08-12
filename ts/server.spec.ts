@@ -37,20 +37,25 @@ describe('ServerApi', () => {
         }
       ]
     });
+
+    // Save the data.
     api.save(log1);
     api.save(log2);
 
-    mocked(fs.readFileSync).mockReturnValue(Buffer.concat([
-      Logs.Logs.encode(log1).finish(),
-      Logs.Logs.encode(log2).finish(),
-    ]));
-
+    // These field are not saved on disk to save space.
+    delete log1.inkbird[0]!.deviceId;
+    delete log2.inkbird[0]!.deviceId;
     expect(fs.appendFileSync).toBeCalledTimes(2);
     expect(fs.appendFileSync).toBeCalledWith(
       '/nonexistent/inkbird/deviceId/2022-08-10', Logs.Logs.encode(log1).finish());
     expect(fs.appendFileSync).toBeCalledWith(
       '/nonexistent/inkbird/deviceId/2022-08-10', Logs.Logs.encode(log2).finish());
 
+    // Load the data.
+    mocked(fs.readFileSync).mockReturnValue(Buffer.concat([
+      Logs.Logs.encode(log1).finish(),
+      Logs.Logs.encode(log2).finish(),
+    ]));
     const loadedLog: Logs.Logs = api.load('inkbird', DateTime.local(2022, 8, 10));
     expect(loadedLog.inkbird.length).toBe(2);
   });
