@@ -70,11 +70,11 @@ export class ClientApi {
       await fetchContent('https://brewery-app.com/api/client/saveSensorProto', {
         method: 'POST',
         timeout: 5 * 1000,
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/octet-stream'},
         body: Logs.SaveSensorDataRequest.encode(proto).finish(),
       });
     } catch (e: any) {
-      logger.error('Error in saveSensorData:', e.message);
+      logger.error('Error in saveSensorProto:', e.message);
       this.saveLocally_(proto.logs);
     }
   }
