@@ -35,9 +35,3 @@ message Logs {
   repeated PowerMeterLog power_meter = 2;
   repeated NetatmoLog netatmo = 3;
 }
-
-message SaveSensorDataRequest {
-  optional bool backfill = 1;
-  optional string machineId = 2;
-  optional Logs logs = 3;
-}
