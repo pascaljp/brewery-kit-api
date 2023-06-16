@@ -1,0 +1,8 @@
+syntax = "proto2";
+package Api;
+
+message Status {
+  optional string machine_id = 1;
+  optional string key = 2;
+  optional string value = 3;
+}

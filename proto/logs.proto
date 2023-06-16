@@ -1,5 +1,5 @@
 syntax = "proto2";
-package Logs;
+package Api;
 
 message InkbirdLog {
   optional string device_id = 5;
