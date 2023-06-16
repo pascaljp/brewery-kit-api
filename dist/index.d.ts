@@ -1,1 +1,1 @@
-export { Logs } from '../proto/genfiles/api_pb';
+export { Api } from '../proto/genfiles/api_pb';
