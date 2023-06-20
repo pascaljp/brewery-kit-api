@@ -1,0 +1,33 @@
+syntax = "proto2";
+package Api2;
+
+message InkbirdLog {
+  optional int32 temperature_e2 = 1;
+  optional int32 humidity_e2 = 2;
+  optional int32 battery_percent = 3;
+}
+
+message PowerMeterLog {
+  optional uint32 watt_e1 = 1;
+}
+
+message NetatmoLog {
+  optional int32 temperature_e2 = 1;
+  optional int32 humidity = 2;
+  optional int32 co2_level = 3;
+  optional int32 air_pressure_e1 = 4;
+  optional int32 noise_level = 5;
+}
+
+message Log {
+  optional string device_id = 1;
+  optional uint32 unixtime = 2;
+
+  optional InkbirdLog inkbird = 3;
+  optional PowerMeterLog power_meter = 4;
+  optional NetatmoLog netatmo = 5;
+}
+
+message Logs {
+  repeated Log log = 1;
+}
